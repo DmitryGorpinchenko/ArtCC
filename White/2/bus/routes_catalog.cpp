@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <vector>
 #include <string>
@@ -13,15 +14,17 @@ public:
         }
     }
     const std::vector<std::string>& busesForStop(const std::string& stop) const {
-        if (buses_for_stop.count(stop)) {
-            return buses_for_stop.at(stop);
+        auto it = buses_for_stop.find(stop);
+        if (it != std::end(buses_for_stop)) {
+            return (*it).second;
         }
         static const std::vector<std::string> null;
         return null;
     }
     const std::vector<std::string>& stopsForBus(const std::string& bus) const {
-        if (stops_for_bus.count(bus)) {
-            return stops_for_bus.at(bus);
+        auto it = stops_for_bus.find(bus);
+        if (it != std::end(stops_for_bus)) {
+            return (*it).second;
         }
         static const std::vector<std::string> null;
         return null;
@@ -35,53 +38,63 @@ private:
     std::map<std::string, std::vector<std::string>> buses_for_stop;
 };
 
-void BusesForStop(const std::string& stop, const BusRoutesCatalog& catalog) {
+std::string BusesForStop(const std::string& stop, const BusRoutesCatalog& catalog) {
     const auto& buses = catalog.busesForStop(stop);
     if (buses.empty()) {
-        std::cout << "No stop";
-    } else {
-        for (const auto& b : buses) {
-            std::cout << b << " ";
-        }
+        return "No stop";
     }
-    std::cout << std::endl;
+    std::ostringstream ss;
+    for (const auto& b : buses) {
+        ss << b << ' ';
+    }
+    return ss.str();
 }
 
-void StopsForBus(const std::string& bus, const BusRoutesCatalog& catalog) {
+std::string StopsForBus(const std::string& bus, const BusRoutesCatalog& catalog) {
     const auto& stops = catalog.stopsForBus(bus);
     if (stops.empty()) {
-        std::cout << "No bus" << std::endl;
-    } else {
-        for (const auto& s : stops) {
-            std::cout << "Stop " << s << ": ";
-            const auto& buses = catalog.busesForStop(s);
-            if (buses.size() == 1) {
-                std::cout << "no interchange" << std::endl;
-            } else {
-                for (const auto& b : buses) {
-                    if (b != bus) {
-                        std::cout << b << " ";
-                    }
+        return "No bus";
+    }
+    std::ostringstream ss;
+    bool first = true;
+    for (const auto& s : stops) {
+        if (!first) {
+            ss << std::endl;
+        }
+        first = false;
+        ss << "Stop " << s << ": ";
+        const auto& buses = catalog.busesForStop(s);
+        if (buses.size() == 1) {
+            ss << "no interchange";
+        } else {
+            for (const auto& b : buses) {
+                if (b != bus) {
+                    ss << b << " ";
                 }
-                std::cout << std::endl;
             }
         }
     }
+    return ss.str();
 }
 
-void AllBuses(const BusRoutesCatalog& catalog) {
+std::string AllBuses(const BusRoutesCatalog& catalog) {
     const auto& all_buses = catalog.allBuses();
     if (all_buses.empty()) {
-        std::cout << "No buses" << std::endl;
-    } else {
-        for (const auto& p : all_buses) {
-            std::cout << "Bus " << p.first << ": ";
-            for (const auto& s : p.second) {
-                std::cout << s << " ";
-            }
-            std::cout << std::endl;
+        return "No buses";
+    }
+    std::ostringstream ss;
+    bool first = true;
+    for (const auto& p : all_buses) {
+        if (!first) {
+            ss << std::endl;
+        }
+        first = false;
+        ss << "Bus " << p.first << ": ";
+        for (const auto& s : p.second) {
+            ss << s << ' ';
         }
     }
+    return ss.str();
 }
 
 int main() {
@@ -89,31 +102,24 @@ int main() {
     std::cin >> n;
     BusRoutesCatalog catalog;
     for (int i = 0; i < n; ++i) {
-        std::string op;
+        std::string op, bus, stop;
         std::cin >> op;
         if (op == "NEW_BUS") {
             int stops_count;
-            std::string bus;
-            std::cin >> bus;
-            std::cin >> stops_count;
-            std::vector<std::string> stops;
-            stops.reserve(stops_count);
-            for (int j = 0; j < stops_count; ++j) {
-                std::string stop;
-                std::cin >> stop;
-                stops.push_back(stop);
+            std::cin >> bus >> stops_count;
+            std::vector<std::string> stops(stops_count);
+            for (auto& s : stops) {
+                std::cin >> s;
             }
             catalog.add(bus, stops);
         } else if (op == "BUSES_FOR_STOP") {
-            std::string stop;
             std::cin >> stop;
-            BusesForStop(stop, catalog);
+            std::cout << BusesForStop(stop, catalog) << std::endl;
         } else if (op == "STOPS_FOR_BUS") {
-            std::string bus;
             std::cin >> bus;
-            StopsForBus(bus, catalog);
+            std::cout << StopsForBus(bus, catalog) << std::endl;
         } else if (op == "ALL_BUSES") {
-            AllBuses(catalog);
+            std::cout << AllBuses(catalog) << std::endl;
         }
     }
     return 0;

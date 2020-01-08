@@ -4,11 +4,17 @@
 #include <map>
 #include <algorithm>
 #include <iterator>
+#include <limits>
 
-std::vector<std::string> History(int upper_bound, const std::map<int, std::string>& m) {
+std::string Name(int year, const std::map<int, std::string>& names) {
+    auto it = names.upper_bound(year);
+    return (it == std::begin(names)) ? "" : (*std::prev(it)).second;
+}
+
+std::vector<std::string> History(int year, const std::map<int, std::string>& names) {
     std::vector<std::string> h;
-    for (const auto& p : m) {
-        if (upper_bound < p.first) {
+    for (const auto& p : names) {
+        if (year < p.first) {
             break;
         }
         if (h.empty() || (h.back() != p.second)) {
@@ -51,10 +57,8 @@ public:
         if (year < birth_year) {
             return "No person";
         }
-        auto fn_it = first_names.upper_bound(year);
-        auto ln_it = last_names.upper_bound(year);
-        const auto fn = (fn_it == std::begin(first_names)) ? "" : (*std::prev(fn_it)).second;
-        const auto ln = (ln_it == std::begin(last_names)) ? "" : (*std::prev(ln_it)).second;
+        const auto fn = Name(year, first_names);
+        const auto ln = Name(year, last_names);
         if (fn.empty() && ln.empty()) {
             return "Incognito";
         }
@@ -87,7 +91,7 @@ public:
 private:
     std::map<int, std::string> first_names;
     std::map<int, std::string> last_names;
-    int birth_year = 0;
+    int birth_year = std::numeric_limits<int>::min();
 };
 
 void test1() {
@@ -158,10 +162,10 @@ void test4() {
 }
 
 int main() {
-    //test1();
-    //test2();
+    test1();
+    test2();
     test3();
-    //test4();
+    test4();
     return 0;
 }
 
