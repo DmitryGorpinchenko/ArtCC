@@ -57,7 +57,7 @@ std::ostream& operator <<(std::ostream& os, const std::map<K, V>& m) {
 
 template<class T, class U>
 void AssertEqual(const T& t, const U& u, const std::string& hint) {
-    if (t != u) {
+    if (!(t == u)) {
         std::ostringstream os;
         os << "Assertion failed: " << t << " != " << u;
         if (!hint.empty()) {
@@ -90,3 +90,20 @@ public:
 private:
     int fail_count = 0;
 };
+
+#define ASSERT_EQUAL(x, y) {            \
+  std::ostringstream _os_;              \
+  _os_ << #x << " != " << #y << ", "    \
+    << __FILE__ << ":" << __LINE__;     \
+  AssertEqual(x, y, _os_.str());        \
+}
+
+#define ASSERT(x) {                     \
+  std::ostringstream _os_;              \
+  _os_ << #x << " is false, "           \
+    << __FILE__ << ":" << __LINE__;     \
+  Assert(x, _os_.str());                \
+}
+
+#define RUN_TEST(tr, func) \
+  tr.RunTest(func, #func)

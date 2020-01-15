@@ -23,15 +23,16 @@ void MergeSort(RandomIt range_begin, RandomIt range_end) {
 // rename to MergeSort when submit Part 2
 template <typename RandomIt>
 void MergeSort3Way(RandomIt range_begin, RandomIt range_end) {
-    if ((range_end - range_begin) > 1) {
+    const auto len = range_end - range_begin;
+    if (len > 1) {
         vector<typename RandomIt::value_type> tmp(range_begin, range_end);
         auto l = begin(tmp);
-        auto m1 = l + tmp.size() / 3;
-        auto m2 = m1 + tmp.size() / 3;
+        auto m1 = l + len / 3;
+        auto m2 = l + len * 2 / 3;
         auto r = end(tmp);
-        MergeSort(l, m1);
-        MergeSort(m1, m2);
-        MergeSort(m2, r);
+        MergeSort3Way(l, m1);
+        MergeSort3Way(m1, m2);
+        MergeSort3Way(m2, r);
         vector<typename RandomIt::value_type> merge_2_3;
         merge(l, m1, m1, m2, back_inserter(merge_2_3));
         merge(begin(merge_2_3), end(merge_2_3), m2, r, range_begin);

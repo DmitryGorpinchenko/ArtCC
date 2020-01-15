@@ -3,10 +3,7 @@
 #include <stdexcept>
 
 void Database::Add(const Date& date, const string& event) {
-    auto& ev = db[date];
-    if (ev.lex_ord.insert(event).second) {
-        ev.add_ord.push_back(event);
-    }
+    db[date].Add(event);
 }
 
 Entry Database::Last(const Date& date) const {
@@ -15,12 +12,12 @@ Entry Database::Last(const Date& date) const {
         throw invalid_argument("No entries");
     }
     const auto& [ d, events ] = *prev(it);
-    return { d, events.add_ord.back() };
+    return { d, events.Last() };
 }
 
 void Database::Print(ostream& os) const {
     for (const auto& [ date, events ] : db) {
-        for (const auto& e : events.add_ord) {
+        for (const auto& e : events.addOrdered()) {
             Entry entry{ date, e };
             os << entry << endl;
         }

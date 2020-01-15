@@ -32,14 +32,17 @@ public:
         }
         if (numerator == 0) {
             denominator = 1;
+        } else {
+            if (denominator < 0) {
+                numerator = -numerator;
+                denominator = -denominator;
+            }
+            const auto div = gcd(abs(numerator), denominator);
+            numerator /= div;
+            denominator /= div;
         }
-        if (denominator < 0) {
-            numerator = -numerator;
-            denominator = -denominator;
-        }
-        const auto div = gcd(abs(numerator), denominator);
-        num = numerator / div;
-        denom = denominator / div;
+        num = numerator;
+        denom = denominator;
     }
 
     int Numerator() const { return num; }
@@ -64,7 +67,9 @@ Rational operator -(const Rational& lhs, const Rational& rhs) {
     return lhs + Rational{ -rhs.Numerator(), rhs.Denominator() };
 }
 Rational operator *(const Rational& lhs, const Rational& rhs) {
-    return { lhs.Numerator() * rhs.Numerator(), lhs.Denominator() * rhs.Denominator() };
+    Rational cross_l{ lhs.Numerator(), rhs.Denominator() }; // try to 'cross-reduce' rationals to push possible overflows further away
+    Rational cross_r{ rhs.Numerator(), lhs.Denominator() };
+    return { cross_l.Numerator() * cross_r.Numerator(), cross_l.Denominator() * cross_r.Denominator() };
 }
 Rational operator /(const Rational& lhs, const Rational& rhs) {
     if (rhs == 0) {
