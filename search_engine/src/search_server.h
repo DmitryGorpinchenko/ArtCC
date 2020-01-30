@@ -2,25 +2,42 @@
 
 #include <istream>
 #include <ostream>
-#include <set>
-#include <list>
 #include <vector>
+#include <deque>
 #include <map>
 #include <string>
+#include <utility>
 using namespace std;
+
+struct DocRank {
+    size_t docid;
+    size_t count;
+    
+    bool operator <(const DocRank& rhs) const {
+        if (count != rhs.count) {
+            return count < rhs.count;
+        }
+        return docid > rhs.docid;
+    }
+    bool operator >(const DocRank& rhs) const {
+        return rhs < *this;
+    }
+};
 
 class InvertedIndex {
 public:
-    void Add(const string& document);
-    list<size_t> Lookup(const string& word) const;
+    void Add(string document);
+    const vector<DocRank>& Lookup(string_view word) const;
 
     const string& GetDocument(size_t id) const {
         return docs[id];
     }
+    
+    size_t Size() const { return docs.size(); }
 
 private:
-    map<string, list<size_t>> index;
-    vector<string> docs;
+    map<string_view, vector<DocRank>> index;
+    deque<string> docs;
 };
 
 class SearchServer {
