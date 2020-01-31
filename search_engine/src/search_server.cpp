@@ -27,24 +27,49 @@ SearchServer::SearchServer(istream& document_input) {
 }
 
 void SearchServer::UpdateDocumentBase(istream& document_input) {
+    if (first) {
+        UpdateDocumentBaseImpl(document_input);
+        first = false;
+    } else {
+        futures.push_back(
+            async([this, &document_input]() {
+                UpdateDocumentBaseImpl(document_input);
+            })
+        );
+    }
+}
+
+void SearchServer::AddQueriesStream(istream& query_input, ostream& search_results_output) {
+    futures.push_back(
+        async([this, &query_input, &search_results_output]() {
+            AddQueriesStreamImpl(query_input, search_results_output);
+        })
+    );
+}
+
+void SearchServer::UpdateDocumentBaseImpl(istream& document_input) {
     InvertedIndex new_index;
 
     for (string current_document; getline(document_input, current_document); ) {
         new_index.Add(move(current_document));
     }
-
+    
+    unique_lock lock(m);
     index = move(new_index);
 }
 
-void SearchServer::AddQueriesStream(istream& query_input, ostream& search_results_output) {
-    vector<size_t> docid_count(index.Size(), 0);
+void SearchServer::AddQueriesStreamImpl(istream& query_input, ostream& search_results_output) {
+    vector<size_t> docid_count;
     
     for (string current_query; getline(query_input, current_query); ) {
-        docid_count.assign(index.Size(), 0);
-
-        for (const auto w_view : SplitIntoWords(current_query)) {
-            for (const auto& [docid, count] : index.Lookup(w_view)) {
-                docid_count[docid] += count;
+        {
+            shared_lock lock(m);
+            
+            docid_count.assign(index.Size(), 0);
+            for (const auto w_view : SplitIntoWords(current_query)) {
+                for (const auto& [docid, count] : index.Lookup(w_view)) {
+                    docid_count[docid] += count;
+                }
             }
         }
 
