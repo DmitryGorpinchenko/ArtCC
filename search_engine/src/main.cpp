@@ -19,12 +19,13 @@ void TestFunctionality(const vector<string>& docs,
 {
     istringstream docs_input(Join('\n', docs));
     istringstream queries_input(Join('\n', queries));
-
-    SearchServer srv;
-    srv.UpdateDocumentBase(docs_input);
     ostringstream queries_output;
-    srv.AddQueriesStream(queries_input, queries_output);
 
+    {
+        SearchServer srv(docs_input);
+        srv.AddQueriesStream(queries_input, queries_output);
+    } // ensure all threads are finished processing queries
+    
     const string result = queries_output.str();
     const auto lines = SplitBy(Strip(result), '\n');
     ASSERT_EQUAL(lines.size(), expected.size());
@@ -202,9 +203,9 @@ void TestBasicSearch() {
 int main() {
     TestRunner tr;
     RUN_TEST(tr, TestSerpFormat);
-    //RUN_TEST(tr, TestTop5);
-    //RUN_TEST(tr, TestHitcount);
-    //RUN_TEST(tr, TestRanking);
-    //RUN_TEST(tr, TestBasicSearch);
+    RUN_TEST(tr, TestTop5);
+    RUN_TEST(tr, TestHitcount);
+    RUN_TEST(tr, TestRanking);
+    RUN_TEST(tr, TestBasicSearch);
     return 0;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "synchronized.h"
+
 #include <istream>
 #include <ostream>
 #include <vector>
@@ -10,7 +12,6 @@
 #include <mutex>
 #include <shared_mutex>
 #include <future>
-using namespace std;
 
 struct DocRank {
     size_t docid;
@@ -29,10 +30,18 @@ struct DocRank {
 
 class InvertedIndex {
 public:
-    void Add(string document);
-    const vector<DocRank>& Lookup(string_view word) const;
+    InvertedIndex() = default;
+    explicit InvertedIndex(std::istream& document_input);
+    
+    InvertedIndex(const InvertedIndex&) = delete; // string_view would point to elements from old deque
+    InvertedIndex& operator =(const InvertedIndex&) = delete;
+    InvertedIndex(InvertedIndex&&) = default;
+    InvertedIndex& operator =(InvertedIndex&&) = default;
 
-    const string& GetDocument(size_t id) const {
+    void Add(std::string document);
+    const std::vector<DocRank>& Lookup(std::string_view word) const;
+
+    const std::string& GetDocument(size_t id) const {
         return docs[id];
     }
     
@@ -40,24 +49,21 @@ public:
     bool Empty() const { return Size() == 0; }
 
 private:
-    map<string_view, vector<DocRank>> index;
-    deque<string> docs;
+    std::deque<std::string> docs;
+    std::map<std::string_view, std::vector<DocRank>> index; // view should not outlive data stored in 'docs'
 };
 
 class SearchServer {
 public:
     SearchServer() = default;
-    explicit SearchServer(istream& document_input);
-    void UpdateDocumentBase(istream& document_input);
-    void AddQueriesStream(istream& query_input, ostream& search_results_output);
+    explicit SearchServer(std::istream& document_input);
+    void UpdateDocumentBase(std::istream& document_input);
+    void AddQueriesStream(std::istream& query_input, std::ostream& search_results_output);
 
 private:
-    void UpdateDocumentBaseImpl(istream& document_input);
-    void AddQueriesStreamImpl(istream& query_input, ostream& search_results_output);
+    void UpdateDocumentBaseImpl(std::istream& document_input);
+    void AddQueriesStreamImpl(std::istream& query_input, std::ostream& search_results_output);
 
-    shared_mutex m;
-    InvertedIndex index;
-    bool first = true;
-    
-    vector<future<void>> futures; // ensure index is not destroyed when futures destructor runs 
+    Synchronized<InvertedIndex> index;
+    std::vector<std::future<void>> futures; // ensure index is not destroyed when futures destructor runs
 };

@@ -4,6 +4,7 @@
 #include <iterator>
 #include <queue>
 #include <functional>
+using namespace std;
 
 vector<string_view> SplitIntoWords(string_view line) {
     vector<string_view> res;
@@ -22,21 +23,16 @@ vector<string_view> SplitIntoWords(string_view line) {
     return res;
 }
 
-SearchServer::SearchServer(istream& document_input) {
-    UpdateDocumentBase(document_input);
-}
+//
+
+SearchServer::SearchServer(istream& document_input) : index(InvertedIndex(document_input)) {}
 
 void SearchServer::UpdateDocumentBase(istream& document_input) {
-    if (first) {
-        UpdateDocumentBaseImpl(document_input);
-        first = false;
-    } else {
-        futures.push_back(
-            async([this, &document_input]() {
-                UpdateDocumentBaseImpl(document_input);
-            })
-        );
-    }
+    futures.push_back(
+        async([this, &document_input]() {
+            UpdateDocumentBaseImpl(document_input);
+        })
+    );
 }
 
 void SearchServer::AddQueriesStream(istream& query_input, ostream& search_results_output) {
@@ -48,14 +44,8 @@ void SearchServer::AddQueriesStream(istream& query_input, ostream& search_result
 }
 
 void SearchServer::UpdateDocumentBaseImpl(istream& document_input) {
-    InvertedIndex new_index;
-
-    for (string current_document; getline(document_input, current_document); ) {
-        new_index.Add(move(current_document));
-    }
-    
-    unique_lock lock(m);
-    index = move(new_index);
+    InvertedIndex new_index(document_input);
+    swap(index.GetWriteAccess().ref_to_value, new_index);
 }
 
 void SearchServer::AddQueriesStreamImpl(istream& query_input, ostream& search_results_output) {
@@ -63,11 +53,11 @@ void SearchServer::AddQueriesStreamImpl(istream& query_input, ostream& search_re
     
     for (string current_query; getline(query_input, current_query); ) {
         {
-            shared_lock lock(m);
+            auto accessor = index.GetReadAccess();
             
-            docid_count.assign(index.Size(), 0);
+            docid_count.assign(accessor.ref_to_value.Size(), 0);
             for (const auto w_view : SplitIntoWords(current_query)) {
-                for (const auto& [docid, count] : index.Lookup(w_view)) {
+                for (const auto& [docid, count] : accessor.ref_to_value.Lookup(w_view)) {
                     docid_count[docid] += count;
                 }
             }
@@ -100,6 +90,14 @@ void SearchServer::AddQueriesStreamImpl(istream& query_input, ostream& search_re
         }
         current_query += '\n';
         search_results_output << current_query;
+    }
+}
+
+//
+
+InvertedIndex::InvertedIndex(std::istream& document_input) {
+    for (string current_document; getline(document_input, current_document); ) {
+        Add(move(current_document));
     }
 }
 
