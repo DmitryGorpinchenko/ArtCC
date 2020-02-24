@@ -88,16 +88,23 @@ void Indent(ostream& output, int indent) {
     }
 }
 
-void PrintNode(ostream& output, const Node& node, int indent = 0, bool start_indent = false);
+void Print(const Node& node, ostream& output, int indent = 0, bool start_indent = false);
 
-void PrintString(ostream& output, const String& str, int indent, bool start_indent) {
+void Print(const String& str, ostream& output, int indent, bool start_indent) {
     if (start_indent) {
         Indent(output, indent);
     }
-    output << '"' << str << '"';
+    output << '"';
+    for (auto c : str) {
+        if (c == '"' || c == '\\') {
+            output << '\\';
+        }
+        output << c;
+    }
+    output << '"';
 }
 
-void PrintNumber(ostream& output, Number num, int indent, bool start_indent) {
+void Print(Number num, ostream& output, int indent, bool start_indent) {
     if (start_indent) {
         Indent(output, indent);
     }
@@ -109,14 +116,14 @@ void PrintNumber(ostream& output, Number num, int indent, bool start_indent) {
     }
 }
 
-void PrintBool(ostream& output, Bool b, int indent, bool start_indent) {
+void Print(Bool b, ostream& output, int indent, bool start_indent) {
     if (start_indent) {
         Indent(output, indent);
     }
     output << boolalpha << b;
 }
 
-void PrintArray(ostream& output, const Array& array, int indent, bool start_indent) {
+void Print(const Array& array, ostream& output, int indent, bool start_indent) {
     if (start_indent) {
         Indent(output, indent);
     }
@@ -128,7 +135,7 @@ void PrintArray(ostream& output, const Array& array, int indent, bool start_inde
         }
         first = false;
         output << '\n';
-        PrintNode(output, n, indent + 4, true);
+        Print(n, output, indent + 4, true);
     }
     if (!array.empty()) {
         output << '\n';
@@ -137,7 +144,7 @@ void PrintArray(ostream& output, const Array& array, int indent, bool start_inde
     output << ']';
 }
 
-void PrintDict(ostream& output, const Dict& dict, int indent, bool start_indent) {
+void Print(const Dict& dict, ostream& output, int indent, bool start_indent) {
     if (start_indent) {
         Indent(output, indent);
     }
@@ -149,9 +156,9 @@ void PrintDict(ostream& output, const Dict& dict, int indent, bool start_indent)
         }
         first = false;
         output << '\n';
-        PrintString(output, k, indent + 4, true);
+        Print(k, output, indent + 4, true);
         output << ": ";
-        PrintNode(output, v, indent + 4, false);
+        Print(v, output, indent + 4, false);
     }
     if (!dict.empty()) {
         output << '\n';
@@ -160,22 +167,12 @@ void PrintDict(ostream& output, const Dict& dict, int indent, bool start_indent)
     output << '}';
 }
 
-void PrintNode(ostream& output, const Node& node, int indent, bool start_indent) {
-    if (node.IsArray()) {
-        PrintArray(output, node.AsArray(), indent, start_indent);
-    } else if (node.IsDict()) {
-        PrintDict(output, node.AsDict(), indent, start_indent);
-    } else if (node.IsString()) {
-        PrintString(output, node.AsString(), indent, start_indent);
-    } else if (node.IsNumber()) {
-        PrintNumber(output, node.AsNumber(), indent, start_indent);
-    } else if (node.IsBool()) {
-        PrintBool(output, node.AsBool(), indent, start_indent);
-    }
+void Print(const Node& node, ostream& output, int indent, bool start_indent) {
+    node.Visit([&output, indent, start_indent](const auto& n) { Print(n, output, indent, start_indent); });
 }
 
 void Save(ostream& output, const Document& doc) {
-    PrintNode(output, doc.GetRoot());
+    Print(doc.GetRoot(), output);
 }
 
 }

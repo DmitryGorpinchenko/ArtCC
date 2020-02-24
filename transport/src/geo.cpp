@@ -21,7 +21,9 @@ complex<double> ComplexPhase(double deg) {
 namespace Geo {
 
 Point::Point(double _lat_deg, double _lon_deg)
-    : lat(ComplexPhase(_lat_deg))
+    : lat_deg(_lat_deg)
+    , lon_deg(_lon_deg)
+    , lat(ComplexPhase(_lat_deg))
     , lon(ComplexPhase(_lon_deg))
 {}
 

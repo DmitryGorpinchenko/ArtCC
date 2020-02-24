@@ -16,29 +16,12 @@ using String = std::string;
 using Number = double;
 using Bool = bool;
 
-class Node : std::variant<Array,
-                          Dict,
-                          String,
-                          Number,
-                          Bool> {
-public:
+struct Node : std::variant<Array,
+                           Dict,
+                           String,
+                           Number,
+                           Bool> {
     using variant::variant;
-
-    bool IsArray() const {
-        return std::holds_alternative<Array>(*this);
-    }
-    bool IsDict() const {
-        return std::holds_alternative<Dict>(*this);
-    }
-    bool IsString() const {
-        return std::holds_alternative<String>(*this);
-    }
-    bool IsNumber() const {
-        return std::holds_alternative<Number>(*this);
-    }
-    bool IsBool() const {
-        return std::holds_alternative<Bool>(*this);
-    }
 
     const Array& AsArray() const {
         return std::get<Array>(*this);
@@ -54,6 +37,11 @@ public:
     }
     Bool AsBool() const {
         return std::get<Bool>(*this);
+    }
+
+    template <typename F>
+    auto Visit(F f) const {
+        return std::visit(f, static_cast<const variant&>(*this));
     }
 };
 
