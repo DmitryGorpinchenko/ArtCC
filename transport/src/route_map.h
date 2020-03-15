@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "svg.h"
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <optional>
@@ -20,7 +21,7 @@
 struct RouteInfo {
     size_t stops_num = 0;
     size_t unique_stops_num = 0;
-    double len = 0;
+    uint32_t len = 0;
     double curv = 0;
 };
 
@@ -159,6 +160,7 @@ class RouteMap {
     };
 public:
     RouteMap(const Json::Document& doc);
+    RouteMap(std::istream& is);
     
     std::optional<BusRoute> GetRoute(const std::string& from, const std::string& to) const;
     std::optional<RouteInfo> GetRouteInfo(const std::string& bus) const;
@@ -167,32 +169,31 @@ public:
     Image Render() const;
     Image Render(const BusRoute& route) const;
     
+    void Serialize(std::ostream& os);
+    
 private:
-    void AddStop(const std::string& stop, const Geo::Point& p, const std::unordered_map<std::string, double>& dist_map);
+    void AddStop(const std::string& stop, const Geo::Point& p, const std::unordered_map<std::string, uint32_t>& dist_map);
     void AddBus(const std::string& bus, const std::vector<std::string>& stop_names, bool is_roundtrip);
 
+    double GeoLen(const std::vector<std::string>& stops, bool is_roundtrip) const;
+    uint32_t RoadLen(const std::vector<std::string>& stops, bool is_roundtrip) const;
     double GeoDistance(const std::string& stop1, const std::string& stop2) const;
-    double RoadDistance(const std::string& stop1, const std::string& stop2) const;
-
-    struct BusData;
-    const std::vector<double>& GetPartialRoadLen(const BusData& data) const;
-    double GetGeoLen(const BusData& data) const;
+    uint32_t RoadDistance(const std::string& stop1, const std::string& stop2) const;
 
     struct BusData {
         std::vector<std::string> stops;
         bool is_roundtrip = false;
         size_t stops_num = 0;
         size_t unique_stops_num = 0;
-
-        mutable std::optional<std::vector<double>> partial_road_len;
-        mutable std::optional<double> geo_len;
+        uint32_t road_len = 0.;
+        double geo_len = 0.;
     };
     std::unordered_map<std::string, BusData> bus_data;
     
     struct StopData {
         Geo::Point coords;
         std::set<std::string> buses;
-        std::unordered_map<std::string, double> dist;
+        std::unordered_map<std::string, uint32_t> dist;
     };
     std::unordered_map<std::string, StopData> stop_data;
     

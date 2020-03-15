@@ -3,6 +3,7 @@
 #include "route_map.h"
 #include "json.h"
 
+#include <iostream>
 #include <optional>
 #include <variant>
 
@@ -61,12 +62,19 @@ private:
 
 class Database {
 public:
-    Database(const Json::Document& doc);
+    Database(const Json::Document& doc)
+        : map(doc)
+    {}
+    Database(std::istream& is)
+        : map(is)
+    {}
 
     Response Process(const Request& req) const {
         const auto id = req.Id();
         return std::visit([this, id](const auto& req) { return Response(id, Process(req)); }, req.Data());
     }
+    
+    void Serialize(std::ostream& os) { map.Serialize(os); }
 
 private:
     std::optional<Response::Bus> Process(const Request::Bus& req) const { return map.GetRouteInfo(req.name); }

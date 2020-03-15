@@ -107,10 +107,6 @@ Json::Dict ToDict(const Response& resp) {
 
 // Database
 
-Database::Database(const Json::Document& doc)
-    : map(doc)
-{}
-
 Json::Document ProcessRequests(const Database& db, const Json::Document& doc) {
     Json::Array array;
     for (const auto& n : doc.GetRoot().AsArray()) {

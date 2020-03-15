@@ -37,14 +37,16 @@ const RouteMap::Router::GraphData& RouteMap::Router::GetGraphData() const {
         using Adj = unordered_map<Graph::VertexId, optional<double>>;
         vector<Adj> weights(data.graph.GetVertexCount());
         const auto velocity_m_min = 50./3. * setts.velocity;
-        const auto fillGraph = [&weights, &data, velocity_m_min](auto stop_first, auto stop_last, bool rev, auto len_first, const string& bus) {
+        const auto fillGraph = [this, &weights, &data, velocity_m_min](auto stop_first, auto stop_last, bool rev, const string& bus) {
             const auto count = size_t(distance(stop_first, stop_last));
             for (size_t i = 0; i < count; ++i) {
+                const auto& i_v = data.vertex_data.at(*next(stop_first, i));
+                uint32_t dist = 0;
                 for (size_t j = i + 1; j < count; ++j) {
-                    const auto& i_v = data.vertex_data.at(*next(stop_first, i));
-                    const auto& j_v = data.vertex_data.at(*next(stop_first, j));
-                    const auto span = j - i;
-                    const auto time = (*next(len_first, j) - *next(len_first, i)) / velocity_m_min;
+                    const auto stop_j = next(stop_first, j);
+                    const auto& j_v = data.vertex_data.at(*stop_j);
+                    dist += map.RoadDistance(*prev(stop_j), *stop_j);
+                    const auto time = dist / velocity_m_min;
                     auto& w = weights[i_v.bus][j_v.wait];
                     if ((!w) || (time < w)) {
                         data.graph.AddEdge({i_v.bus, j_v.wait, time});
@@ -52,7 +54,7 @@ const RouteMap::Router::GraphData& RouteMap::Router::GetGraphData() const {
                             BusRoute::Element::Bus{
                                 .name = bus,
                                 .from = i,
-                                .span = span,
+                                .span = j - i,
                                 .rev = rev
                             },
                             time
@@ -64,10 +66,9 @@ const RouteMap::Router::GraphData& RouteMap::Router::GetGraphData() const {
         };
         for (const auto& [k, v] : map.bus_data) {
             const auto& stops = v.stops;
-            const auto& partial_len = map.GetPartialRoadLen(v);
-            fillGraph(begin(stops), end(stops), false, begin(partial_len), k);
+            fillGraph(begin(stops), end(stops), false, k);
             if (!v.is_roundtrip) {
-                fillGraph(rbegin(stops), rend(stops), true, next(begin(partial_len), stops.size() - 1), k);
+                fillGraph(rbegin(stops), rend(stops), true, k);
             }
         }
     }

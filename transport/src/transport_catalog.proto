@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package RouteMapSerialize;
+
+message Bus {
+    string name = 1;
+    uint32 stops_num = 2;
+    uint32 unique_stops_num = 3;
+    uint32 road_len = 4;
+    double geo_len = 5;
+}
+
+message Stop {
+    string name = 1;
+    repeated string buses = 2;
+}
+
+message TransportCatalog {
+    repeated Stop stops = 1;
+    repeated Bus buses = 2;
+}
+
