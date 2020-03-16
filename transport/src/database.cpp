@@ -71,15 +71,15 @@ Json::Dict ToDict(const Response::Stop& resp) {
 
 Json::Dict ToDict(const Response::Route& resp) {
     Json::Array items;
-    for (const auto& i : resp.data.items) {
+    for (const auto& i : resp/*.data*/.items) {
         items.emplace_back(ToDict(i));
     }
-    ostringstream ss;
-    resp.img.Render(ss);
+    //ostringstream ss;
+    //resp.img.Render(ss);
     return {
-        {"total_time", Json::Number(resp.data.total_time)},
+        {"total_time", Json::Number(resp/*.data*/.total_time)},
         {"items", move(items)},
-        {"map", ss.str()}
+        //{"map", ss.str()}
     };
 }
 
