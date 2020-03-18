@@ -36,11 +36,10 @@ class Response {
 public:
     using Bus = RouteInfo;
     using Stop = Buses;
-    using Route = BusRoute;
-    /*struct Route {
+    struct Route {
         BusRoute data;
         Image img;
-    };*/
+    };
     using Map = Image;
     using NotFound = std::monostate;
     
@@ -81,15 +80,15 @@ private:
     std::optional<Response::Bus> Process(const Request::Bus& req) const { return map.GetRouteInfo(req.name); }
     std::optional<Response::Stop> Process(const Request::Stop& req) const { return map.GetBusesFor(req.name); }
     std::optional<Response::Route> Process(const Request::Route& req) const {
-        /*auto route =*/return map.GetRoute(req.from, req.to);
-        /*if (route) {
+        auto route = map.GetRoute(req.from, req.to);
+        if (route) {
             auto img = map.Render(*route);
             return Response::Route{
                 std::move(*route),
                 std::move(img)
             };
         }
-        return std::nullopt;*/
+        return std::nullopt;
     }
     Response::Map Process(const Request::Map& req) const { return map.Render(); }
 
